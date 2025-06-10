@@ -12,7 +12,7 @@ The `read.csv()` calls in the analysis scripts refer to the GitHub raw files, wh
 The raw amplicon sequencing data have been deposited in the DNA Data Bank of Japan (DDBJ) under the BioProject accession number: **PRJDB18899**.
 
 You can access the raw FASTQ files at:
-[https://ddbj.nig.ac.jp/resource/bioproject/PRJDB16188](https://ddbj.nig.ac.jp/resource/bioproject/PRJDB18899)
+[https://ddbj.nig.ac.jp/resource/bioproject/PRJDB18899](https://ddbj.nig.ac.jp/resource/bioproject/PRJDB18899)
 
 Sample metadata and mapping files used for analysis are available in the `data/` folder of this repository.
 
