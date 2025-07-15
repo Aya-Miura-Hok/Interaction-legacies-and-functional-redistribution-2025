@@ -1,4 +1,4 @@
-# Code for: "Interaction legacies and functional redistribution reshape FPOM decomposition in aquatic ecosystems"
+# Code for: "Interaction legacies and functional redistribution restructure the FPOM and DOM transformation process in aquatic ecosystems"
 This repository contains code used for statistical analyses and figure generation in the above manuscript.
 
 ## Data availability
