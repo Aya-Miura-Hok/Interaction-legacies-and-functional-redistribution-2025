@@ -98,7 +98,7 @@ tukey_df <- tukey_df %>%
                           by = 0.02, length.out = nrow(tukey_df)))
 
 # Final plot: Boxplot with significance annotations
-ggplot(df_phylum, aes(x = Treatment, y = Abundance)) +
+p <- ggplot(df_phylum, aes(x = Treatment, y = Abundance)) +
   geom_boxplot() +
   geom_jitter(width = 0.2, alpha = 0.5) +
   stat_compare_means(method = "anova", label.y = max(df_phylum$Abundance) * 1.1) +
@@ -109,3 +109,5 @@ ggplot(df_phylum, aes(x = Treatment, y = Abundance)) +
     x = "Treatment",
     y = "Relative Abundance"
   )
+
+print(p)
