@@ -86,7 +86,7 @@ bp_scores <- as.data.frame(scores(dbrda_model, display = "bp"))
 bp_scores$var <- rownames(bp_scores)
 
 # Replace variable names for display
-bp_scores$var <- recode(bp_scores$var,
+bp_scores$var <- dplyr::recode(bp_scores$var,
                         "d13C" = "δ13C",
                         "d15N" = "δ15N")
 # Define colors
