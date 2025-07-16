@@ -66,7 +66,7 @@ df_long <- df_lm %>%
   mutate(Variable = factor(Variable, levels = c("d13C", "HIX", "BIX")))
 
 # Plot: scatter plots with regression lines and correlation statistics
-ggplot(df_long, aes(x = Verrucomicrobiota, y = Value)) +
+p <- ggplot(df_long, aes(x = Verrucomicrobiota, y = Value)) +
   geom_point(alpha = 0.8, size = 2.5) +
   geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 0.9) +
   facet_wrap(~ Variable, scales = "free_y") +
@@ -83,3 +83,5 @@ ggplot(df_long, aes(x = Verrucomicrobiota, y = Value)) +
     y = "Response variable",
     title = "Linear relationships between Verrucomicrobiota and DOM metrics"
   )
+
+print(p)
