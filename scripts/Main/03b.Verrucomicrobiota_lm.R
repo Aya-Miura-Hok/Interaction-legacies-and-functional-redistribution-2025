@@ -3,6 +3,7 @@ library(phyloseq)
 library(microbiome)
 library(tidyverse)
 library(ggpubr)
+library(dplyr)
 
 # Import data
 sample_sheet <- read.csv("https://raw.githubusercontent.com/Aya-Miura-Hok/Interaction-legacies-and-functional-redistribution-2025/refs/heads/main/data/bacteria/sample_sheet.csv", row.names = 1)
@@ -25,63 +26,68 @@ fpomsize  <- subset_samples(exp, Treatment %in% c("C", "I", "M"))
 fpomsize1 <- subset_samples(exp, Treatment %in% c("C", "I"))
 fpomsize2 <- subset_samples(exp, Treatment %in% c("C", "M"))
 
-# Aggregate rare taxa and normalize to relative abundance (Phylum level)
-pseq <- fpomsize %>%
-  aggregate_rare(level = "Phylum", detection = 5, prevalence = 0.4) %>%
-  microbiome::transform("compositional") %>%
-  aggregate_taxa(level = "Phylum")
+# variables for analysis
+analyze_fpom <- function(fpom_ps, label) {
+  pseq <- fpom_ps %>%
+    aggregate_rare(level = "Phylum", detection = 5, prevalence = 0.4) %>%
+    microbiome::transform("compositional") %>%
+    aggregate_taxa(level = "Phylum")
+  
+  Verru <- subset_taxa(pseq, Phylum == "Verrucomicrobiota")
+  
+  df_env <- as(sample_data(Verru), "data.frame") %>%
+    rownames_to_column(var = "Sample") %>%
+    dplyr::select(Sample, d13C, HIX, BIX)
+  
+  verru_df <- psmelt(Verru) %>%
+    group_by(Sample) %>%
+    summarise(Verrucomicrobiota = sum(Abundance)) %>%
+    ungroup()
+  
+  df_lm <- df_env %>%
+    left_join(verru_df, by = "Sample") %>%
+    drop_na()
 
-# Subset Verrucomicrobiota
-Verru <- subset_taxa(pseq, Phylum == "Verrucomicrobiota")
+  # Linear models and model summaries
+  cat(paste0("\n--- ", label, ": d13C ~ Verrucomicrobiota ---\n"))
+  print(summary(lm(d13C ~ Verrucomicrobiota, data = df_lm)))
+  
+  cat(paste0("\n--- ", label, ": HIX ~ Verrucomicrobiota ---\n"))
+  print(summary(lm(HIX ~ Verrucomicrobiota, data = df_lm)))
+  
+  cat(paste0("\n--- ", label, ": BIX ~ Verrucomicrobiota ---\n"))
+  print(summary(lm(BIX ~ Verrucomicrobiota, data = df_lm)))
+  
+  # Visualization
+   df_long <- df_lm %>%
+    pivot_longer(cols = c(d13C, HIX, BIX), names_to = "Variable", values_to = "Value") %>%
+    mutate(Variable = factor(Variable, levels = c("d13C", "HIX", "BIX")))
+  
+  plot <- ggplot(df_long, aes(x = Verrucomicrobiota, y = Value)) +
+    geom_point(alpha = 0.8, size = 2.5) +
+    geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 0.9) +
+    facet_wrap(~ Variable, scales = "free_y") +
+    stat_cor(
+      aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
+      method = "pearson",
+      label.x.npc = "left",
+      label.y.npc = "top",
+      size = 6
+    ) +
+    theme_minimal(base_size = 16) +
+    labs(
+      x = "Verrucomicrobiota relative abundance",
+      y = "Response variable",
+      title = paste("Linear relationships in", label)
+    )
+  
+  print(plot)
+}
 
-# Extract environmental variables
-df_env <- as(sample_data(Verru), "data.frame") %>%
-  rownames_to_column(var = "Sample") %>%
-  select(Sample, d13C, HIX, BIX)
+# fpom1 (C, I)
+fpom1 <- subset_samples(exp, Treatment %in% c("C", "I"))
+analyze_fpom(fpom1, "fpom1 (C vs I)")
 
-# Extract relative abundance of Verrucomicrobiota
-verru_df <- psmelt(Verru) %>%
-  group_by(Sample) %>%
-  summarise(Verrucomicrobiota = sum(Abundance)) %>%
-  ungroup()
-
-# Merge with environmental variables
-df_lm <- df_env %>%
-  left_join(verru_df, by = "Sample") %>%
-  drop_na()
-
-# Linear models
-model_d13C <- lm(d13C ~ Verrucomicrobiota, data = df_lm)
-model_HIX  <- lm(HIX  ~ Verrucomicrobiota, data = df_lm)
-model_BIX  <- lm(BIX  ~ Verrucomicrobiota, data = df_lm)
-
-# Model summaries
-summary(model_d13C)
-summary(model_HIX)
-summary(model_BIX)
-
-# Convert to long format for visualization
-df_long <- df_lm %>%
-  pivot_longer(cols = c(d13C, HIX, BIX), names_to = "Variable", values_to = "Value") %>%
-  mutate(Variable = factor(Variable, levels = c("d13C", "HIX", "BIX")))
-
-# Plot: scatter plots with regression lines and correlation statistics
-p <- ggplot(df_long, aes(x = Verrucomicrobiota, y = Value)) +
-  geom_point(alpha = 0.8, size = 2.5) +
-  geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 0.9) +
-  facet_wrap(~ Variable, scales = "free_y") +
-  stat_cor(
-    aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")),
-    method = "pearson",
-    label.x.npc = "left",
-    label.y.npc = "top",
-    size = 6
-  ) +
-  theme_minimal(base_size = 16) +
-  labs(
-    x = "Verrucomicrobiota relative abundance",
-    y = "Response variable",
-    title = "Linear relationships between Verrucomicrobiota and DOM metrics"
-  )
-
-print(p)
+# fpom2 (C, M)
+fpom2 <- subset_samples(exp, Treatment %in% c("C", "M"))
+analyze_fpom(fpom2, "fpom2 (C vs M)")
